@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <title>Инженерные калькуляторы</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; min-height: 100vh; min-height: 100dvh; }
+        .container { max-width: 500px; margin: 0 auto; padding: 24px 16px; }
+        h1 { text-align: center; font-size: 24px; margin-bottom: 4px; font-weight: 700; }
+        .subtitle { text-align: center; color: #94a3b8; font-size: 14px; margin-bottom: 32px; }
+        .card { display: flex; align-items: center; gap: 14px; text-decoration: none; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 18px; margin-bottom: 14px; transition: all 0.2s; color: white; }
+        .card:hover, .card:active { background: rgba(255,255,255,0.14); transform: translateY(-1px); }
+        .card .icon { flex: 0 0 auto; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 12px; overflow: hidden; }
+        .card .icon svg { width: 60px; height: 60px; }
+        .card .info { flex: 1; }
+        .card .name { font-size: 17px; font-weight: 700; margin-bottom: 3px; }
+        .card .desc { font-size: 12px; color: #94a3b8; line-height: 1.4; margin-bottom: 6px; }
+        .card .badge { display: inline-block; padding: 2px 9px; background: #4CAF50; color: white; font-size: 11px; border-radius: 10px; font-weight: 600; }
+        .card .badge-soon { background: #666; }
+        .footer { text-align: center; margin-top: 32px; font-size: 12px; color: #555; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Инженерные калькуляторы</h1>
+        <p class="subtitle">Выберите нужный инструмент</p>
+
+        <a class="card" href="powerm3/">
+            <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="case" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8eaed"/><stop offset="1" stop-color="#c2c8cf"/></linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5e0000"/><stop offset="1" stop-color="#8a0f0f"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.6"><stop offset="0" stop-color="#ff8899" stop-opacity="0.55"/><stop offset="1" stop-color="#ff8899" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="108" fill="url(#case)"/>
+  <rect x="14" y="14" width="484" height="484" rx="96" fill="none" stroke="#aab2ba" stroke-width="6"/>
+  <text x="256" y="82" text-anchor="middle" fill="#1a1a1a" font-family="Arial, sans-serif" font-size="30" font-weight="bold" letter-spacing="1">ВАТТМЕТР</text>
+  <text x="256" y="120" text-anchor="middle" fill="#3a3a3a" font-family="Arial, sans-serif" font-size="20" font-weight="bold" letter-spacing="0.5">ПОГЛОЩАЕМОЙ МОЩНОСТИ</text>
+  <rect x="60" y="148" width="392" height="188" rx="20" fill="#2a2a2a"/>
+  <rect x="70" y="158" width="372" height="168" rx="14" fill="url(#screen)"/>
+  <ellipse cx="256" cy="242" rx="170" ry="70" fill="url(#glow)"/>
+  <g fill="#ffc4cd" font-family="'Courier New', monospace" font-weight="bold">
+    <text x="88" y="288" font-size="118">9</text>
+    <text x="172" y="296" font-size="72">.</text>
+    <text x="202" y="288" font-size="118">8</text>
+    <text x="274" y="288" font-size="118">7</text>
+    <text x="346" y="288" font-size="118">5</text>
+  </g>
+  <g font-family="Arial, sans-serif" font-size="30" font-weight="bold" fill="#1a1a1a">
+    <text x="102" y="396" text-anchor="middle">W</text>
+    <text x="256" y="396" text-anchor="middle">mW</text>
+    <text x="410" y="396" text-anchor="middle">W</text>
+  </g>
+  <circle cx="102" cy="424" r="16" fill="#5a0000" stroke="#8a0f0f" stroke-width="3"/>
+  <circle cx="256" cy="424" r="16" fill="#ff3355" stroke="#ff8899" stroke-width="3"/>
+  <circle cx="410" cy="424" r="16" fill="#5a0000" stroke="#8a0f0f" stroke-width="3"/>
+  <circle cx="250" cy="418" r="5" fill="#ffdde2"/>
+  <rect x="146" y="458" width="220" height="40" rx="12" fill="#1b4332"/>
+  <text x="256" y="485" text-anchor="middle" fill="#ffeb3b" font-family="Arial, sans-serif" font-size="22" font-weight="bold" letter-spacing="1">M3-108</text>
+</svg></div>
+            <div class="info">
+                <div class="name">PowerM3-108</div>
+                <div class="desc">Расчёт мощности М3-108. Таблицы коэффициентов, несколько КИУ, экспорт в HTML, сохранение данных.</div>
+                <span class="badge">✓ Готово</span>
+            </div>
+        </a>
+
+        <a class="card" href="resistor/">
+            <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#243b55"/><stop offset="0.55" stop-color="#16213e"/><stop offset="1" stop-color="#0f172a"/></linearGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f5e6ce"/><stop offset="0.5" stop-color="#e6cfA6"/><stop offset="1" stop-color="#cfa877"/></linearGradient>
+    <linearGradient id="lead" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0e0e0"/><stop offset="1" stop-color="#9e9e9e"/></linearGradient>
+    <linearGradient id="cap" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfd8dc"/><stop offset="1" stop-color="#90a4ae"/></linearGradient>
+    <radialGradient id="gloss" cx="0.5" cy="0.18" r="0.7"><stop offset="0" stop-color="#ffffff" stop-opacity="0.30"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#gloss)"/>
+  <ellipse cx="256" cy="330" rx="150" ry="24" fill="#000000" opacity="0.22"/>
+  <rect x="52" y="240" width="96" height="28" rx="9" fill="url(#lead)"/>
+  <rect x="364" y="240" width="96" height="28" rx="9" fill="url(#lead)"/>
+  <rect x="142" y="186" width="228" height="136" rx="26" fill="url(#body)" stroke="#b98d5a" stroke-width="5"/>
+  <rect x="142" y="186" width="18" height="136" rx="9" fill="url(#cap)"/>
+  <rect x="352" y="186" width="18" height="136" rx="9" fill="url(#cap)"/>
+  <rect x="184" y="186" width="18" height="136" fill="#795548"/>
+  <rect x="206" y="186" width="18" height="136" fill="#1a1a1a"/>
+  <rect x="228" y="186" width="18" height="136" fill="#e53935"/>
+  <rect x="322" y="186" width="18" height="136" fill="#fbc02d"/>
+  <rect x="156" y="196" width="200" height="22" rx="11" fill="#ffffff" opacity="0.25"/>
+  <text x="256" y="404" text-anchor="middle" fill="#e8eaf6" font-family="Arial, sans-serif" font-size="46" font-weight="bold">Ω</text>
+</svg></div>
+            <div class="info">
+                <div class="name">Калькулятор резисторов</div>
+                <div class="desc">Расчёт сопротивления при последовательном и параллельном соединении резисторов.</div>
+                <span class="badge">✓ Готово</span>
+            </div>
+        </a>
+
+        <a class="card" style="opacity:0.4;pointer-events:none;">
+            <div class="icon"><span style="font-size:28px;">➕</span></div>
+            <div class="info">
+                <div class="name">Добавить новый калькулятор</div>
+                <div class="desc">Здесь может быть ваш следующий инженерный калькулятор.</div>
+                <span class="badge badge-soon">В планах</span>
+            </div>
+        </a>
+
+        <p class="footer">Сервер в России 🇷🇺 &nbsp;|&nbsp; Работает офлайн</p>
+    </div>
+</body>
+</html>

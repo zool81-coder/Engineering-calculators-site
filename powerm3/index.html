@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     PowerM3-108 — Калькулятор мощности
+     ============================================================
+     Три части файла:
+       1) <head>  — стили (CSS)
+       2) <body>  — разметка (HTML)
+       3) <script>— логика (JavaScript)
+
+     Режимы работы (переключаются буквой "Q"):
+       - КИУ (Q = 16): название "КИУ № ...", коэфф 2.5, поле "P ср", табло 2.5
+       - УВ  (Q = 10): название "УВ № ...",  коэфф 0.123, поле "P имп", табло 1.0
+     ============================================================ -->
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#005744">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PowerM3-108">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23005744' width='100' height='100' rx='20'/><text x='50' y='65' text-anchor='middle' fill='white' font-size='50' font-weight='bold'>P</text></svg>">
+    <title>PowerM3-108</title>
+    <style>
+        :root {
+            --bg: #005744; --bg-dark: #0B3D2E; --green-light: #B7E4C7; --green-active: #95D5B2;
+            --green-pale: #D8F3DC; --cell-bg: #F1FAEE; --header-bg: #1B4332;
+            --danger: #7A0700; --blue: #1565C0; --purple: #8E24AA;
+            --yellow-text: #FFEB3B; --red-display: #FF1100;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg); color: white; min-height: 100vh; min-height: 100dvh;
+            overflow-x: hidden; -webkit-tap-highlight-color: transparent;
+        }
+        .container { max-width: 500px; margin: 0 auto; padding: 8px 12px 24px; display: flex; flex-direction: column; align-items: center; }
+        .top-section { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 8px; }
+        .label-p { font-size: 48px; font-weight: bold; color: black; }
+        .label-sub { font-size: 20px; color: black; margin-top: 20px; }
+        .label-eq { font-size: 34px; font-weight: bold; color: black; margin: 0 4px; }
+        .label-kw { font-size: 48px; color: #010101; margin-left: 4px; }
+        .result-box { background: white; border: 3px solid #ccc; border-radius: 8px; width: 130px; height: 64px; display: flex; align-items: center; justify-content: center; font-size: 42px; font-weight: bold; color: black; overflow: hidden; }
+        .meter-section { position: relative; width: 100%; max-width: 400px; height: 120px; margin: 16px 0; background: #222; border-radius: 12px; border: 3px solid #444; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .meter-bg { position: absolute; inset: 0; background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
+        .meter-label { position: absolute; top: 8px; left: 16px; color: #aaa; font-size: 12px; letter-spacing: 2px; }
+        .meter-display { position: relative; color: var(--red-display); font-family: 'Courier New', monospace; font-size: 38px; font-weight: bold; background: #111; padding: 6px 20px; border-radius: 6px; border: 2px solid #333; min-width: 100px; text-align: center; text-shadow: 0 0 8px rgba(255,17,0,0.4); }
+        .q-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; justify-content: center; }
+        .q-input { width: 60px; height: 44px; background: #333; color: var(--yellow-text); border: 2px solid #555; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; padding: 4px; }
+        .btn-sm { width: 44px; height: 44px; border: none; border-radius: 8px; font-size: 22px; font-weight: bold; cursor: pointer; color: white; background: var(--danger); display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
+        .btn-sm:active { opacity: 0.7; }
+        .q-label-clickable { font-size: 28px; font-weight: bold; color: black; cursor: pointer; user-select: none; padding: 2px 6px; border-radius: 4px; text-decoration: underline; text-underline-offset: 4px; }
+        .q-label-clickable:active { opacity: 0.6; background: rgba(0,0,0,0.1); }
+        .back-link { display: inline-block; color: #ccc; font-size: 13px; text-decoration: none; padding: 4px 8px; border-radius: 6px; background: rgba(255,255,255,0.1); }
+        .back-link:hover { background: rgba(255,255,255,0.2); color: white; }
+        .table-title { width: 100%; background: var(--bg-dark); color: white; text-align: center; padding: 12px; font-size: 20px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 8px; user-select: none; }
+        .table-title:active { opacity: 0.8; }
+        .table-wrapper { width: 100%; overflow-x: auto; background: var(--green-pale); border-radius: 8px; padding: 8px; margin-top: 4px; }
+        table { width: 100%; border-collapse: separate; border-spacing: 4px; background: white; border-radius: 8px; min-width: 380px; }
+        th { background: var(--header-bg); color: white; padding: 12px 8px; font-size: 13px; text-align: center; border-radius: 4px; white-space: nowrap; }
+        th.clickable { cursor: pointer; user-select: none; text-decoration: underline; text-underline-offset: 3px; }
+        th.clickable:active { opacity: 0.7; }
+        td { padding: 4px; text-align: center; border-radius: 4px; }
+        .cell-num { background: var(--cell-bg); color: black; font-size: 16px; padding: 10px 6px; min-width: 40px; user-select: none; }
+        .cell-result { background: var(--cell-bg); color: black; font-size: 16px; padding: 10px 6px; min-width: 75px; user-select: none; }
+        .coeff-input { width: 64px; height: 36px; text-align: center; font-size: 15px; border: 2px solid #999; border-radius: 4px; background: white; color: black; padding: 2px; }
+        tr.active td { background: var(--green-light); }
+        tr.active .cell-num { background: var(--green-active); }
+        tr.active .cell-result { background: var(--green-pale); }
+        tr { cursor: pointer; }
+        .btn-row { width: 100%; display: flex; gap: 12px; margin-top: 16px; justify-content: center; flex-wrap: wrap; }
+        .btn { padding: 12px 20px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; color: white; cursor: pointer; touch-action: manipulation; flex: 1; max-width: 220px; min-width: 140px; }
+        .btn:active { opacity: 0.75; }
+        .btn-save { background: var(--blue); }
+        .btn-clear { background: var(--purple); }
+        .btn-help { background: #FF8F00; flex: 0 0 100%; max-width: 100%; }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: white; color: black; border-radius: 16px; padding: 20px; width: 90%; max-width: 420px; max-height: 80vh; overflow-y: auto; }
+        .modal h3 { margin-bottom: 16px; font-size: 18px; }
+        .modal input { width: 100%; padding: 10px; border: 2px solid #ccc; border-radius: 8px; font-size: 16px; margin-bottom: 12px; }
+        .modal .btn-row-modal { display: flex; gap: 8px; justify-content: flex-end; }
+        .modal .btn-modal { padding: 10px 20px; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; }
+        .btn-ok { background: #4CAF50; color: white; }
+        .btn-cancel { background: #ccc; color: black; }
+        .btn-danger { background: #f44336; color: white; }
+        .table-list-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #E8F5E9; border-radius: 8px; margin-bottom: 8px; user-select: none; }
+        .table-list-item .name { font-weight: bold; font-size: 15px; cursor: pointer; flex: 1; }
+        .table-list-item .actions { display: flex; gap: 6px; }
+        .table-list-item .btn-mini { padding: 6px 10px; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; color: white; }
+        .btn-edit { background: #2196F3; }
+        .btn-del { background: #f44336; }
+        .btn-add-table { width: 100%; padding: 10px; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; margin-bottom: 8px; }
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 24px; font-size: 14px; z-index: 200; opacity: 0; transition: opacity 0.3s; pointer-events: none; text-align: center; max-width: 90%; }
+        .toast.show { opacity: 1; }
+
+        /* ===== ОБУЧАЮЩИЙ ТУР ===== */
+        .tour-highlight {
+            position: fixed; z-index: 300; pointer-events: none;
+            border: 3px solid #FFD700; border-radius: 8px;
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.65);
+            transition: left 0.2s, top 0.2s, width 0.2s, height 0.2s;
+        }
+        .tour-tooltip {
+            position: fixed; z-index: 301; background: white; color: #222;
+            padding: 16px 18px; border-radius: 12px; max-width: 320px; width: 90%;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+        }
+        .tour-tooltip .tour-title { font-weight: bold; font-size: 16px; margin-bottom: 6px; }
+        .tour-tooltip .tour-text { font-size: 14px; line-height: 1.5; margin-bottom: 12px; }
+        .tour-tooltip .tour-nav { display: flex; gap: 8px; justify-content: space-between; align-items: center; }
+        .tour-tooltip .tour-step { font-size: 12px; color: #999; }
+        .tour-tooltip button { padding: 8px 14px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .tour-prev { background: #ccc; color: #333; }
+        .tour-next { background: #4CAF50; color: white; }
+
+        @media (max-width: 380px) {
+            .label-p { font-size: 36px; } .label-kw { font-size: 36px; }
+            .result-box { width: 100px; height: 50px; font-size: 32px; }
+            .meter-display { font-size: 28px; padding: 4px 14px; }
+            .q-label-clickable { font-size: 22px; }
+            th { font-size: 11px; padding: 8px 4px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../" class="back-link" style="align-self:flex-start;">← На главную</a>
+        <div class="top-section">
+            <span class="label-p">P</span><span class="label-sub" id="powerLabel">ср</span><span class="label-eq">=</span>
+            <div class="result-box" id="resultTextView">6.25</div>
+            <span class="label-kw">кВт</span>
+        </div>
+        <div class="meter-section">
+            <div class="meter-bg"></div><span class="meter-label">M3-108</span>
+            <div class="meter-display" id="text_na_tablo">2.5</div>
+        </div>
+        <div class="q-row">
+            <span class="q-label-clickable" id="qLabel" title="Нажмите, чтобы создать новую таблицу в другом режиме: КИУ (16) ↔ УВ (10)">Q=</span>
+            <input type="text" class="q-input" id="duty_cycle" value="16.0" inputmode="decimal">
+            <button class="btn-sm" id="add_down" title="-0.1">&minus;</button>
+            <button class="btn-sm" id="add_up" title="+0.1">+</button>
+        </div>
+        <div class="table-title" id="tableTitle">КИУ № 1</div>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr>
+                    <th class="clickable" id="thNumberHeader" title="Строки 1-6 ↔ 7-12">№ Л (1)</th>
+                    <th>Коэфф.</th><th>Р средняя</th><th>Р импульс</th>
+                </tr></thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+        <div class="btn-row">
+            <button class="btn btn-save" id="btnSaveSend">💾 Сохранить и отправить</button>
+            <button class="btn btn-clear" id="btnClearTable">🗑 Очистить</button>
+            <button class="btn btn-help" id="btnHelp">❓ Помощь</button>
+        </div>
+    </div>
+    <div class="toast" id="toast"></div>
+    <div class="modal-overlay" id="modalOverlay"><div class="modal" id="modalContent"></div></div>
+
+    <script>
+        /* ================= КОНСТАНТЫ ================= */
+        var ROW_COUNT=6, K_STEP=0.1, PREFS_KEY='powerm3_data';
+        var DEFAULT_COEFF=2.5;   // коэффициент режима КИУ (Q=16)
+        var DEFAULT_X=2.5;       // показание М3-108 режима КИУ
+        var DEFAULT_Y=16.0;      // скважность режима КИУ
+        var UV_COEFF=0.123;      // коэффициент режима УВ (Q=10)
+        var UV_X=1.0;            // показание М3-108 режима УВ
+        var UV_Y=10.0;           // скважность режима УВ
+
+        /* ================= СОСТОЯНИЕ ================= */
+        var rowsData=[], activeRowIndex=0, currentTableNumber='1', tableNumbers=['1'], isInternalUpdate=false, rowOffset=0, dutyPreset=16;
+
+        /* ================= ССЫЛКИ НА DOM ================= */
+        var $resultTextView=document.getElementById('resultTextView'), $textNaTablo=document.getElementById('text_na_tablo'),
+            $tableTitle=document.getElementById('tableTitle'), $dutyCycle=document.getElementById('duty_cycle'),
+            $tableBody=document.getElementById('tableBody'), $modalOverlay=document.getElementById('modalOverlay'),
+            $modalContent=document.getElementById('modalContent'), $toast=document.getElementById('toast');
+
+        /* ================= УТИЛИТЫ ================= */
+        function df(v){return v.toFixed(2)} function df1(v){return v.toFixed(1)} function df3(v){return v.toFixed(3)}
+        function roundTo1(v){return Math.round(v*10)/10}
+        function getDouble(v,d){if(v===''||v===null||v===undefined)return d;var n=parseFloat(String(v).replace(',','.'));return isNaN(n)?d:n}
+        function escapeHtml(t){if(!t)return'';return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+        function showToast(m,d){d=d||2000;$toast.textContent=m;$toast.classList.add('show');clearTimeout($toast._timeout);$toast._timeout=setTimeout(function(){$toast.classList.remove('show')},d)}
+        function getDateString(){var n=new Date();return n.getFullYear()+String(n.getMonth()+1).padStart(2,'0')+String(n.getDate()).padStart(2,'0')+'_'+String(n.getHours()).padStart(2,'0')+String(n.getMinutes()).padStart(2,'0')+String(n.getSeconds()).padStart(2,'0')}
+
+        /* ================= РЕЖИМ КИУ / УВ ================= */
+        // Режим определяется скважностью: Q=10 → "УВ", Q=16 → "КИУ".
+        function isUvMode(){return dutyPreset===UV_Y}
+        function tablePrefix(){return isUvMode()?'УВ № ':'КИУ № '}
+        function defaultCoeffForMode(){return isUvMode()?UV_COEFF:DEFAULT_COEFF}
+        function defaultXForMode(){return isUvMode()?UV_X:DEFAULT_X}
+        function buildTableTitle(n){return tablePrefix()+n}
+        // Название таблицы по её СОХРАНЁННОЙ скважности (для списка таблиц)
+        function titleForDuty(tn,duty){return (duty===UV_Y?'УВ № ':'КИУ № ')+tn}
+        function getStoredDuty(tn){var a=loadAllFromStorage();if(a){var dv=a['t_'+tn+'_duty'];if(dv!==undefined)return dv}return DEFAULT_Y}
+        // Подпись верхнего поля: "ср" (КИУ) или "имп" (УВ)
+        function updatePowerLabel(){var lbl=document.getElementById('powerLabel');if(lbl)lbl.textContent=isUvMode()?'имп':'ср'}
+
+        /* ================= ХРАНИЛИЩЕ ================= */
+        function loadAllFromStorage(){try{var r=localStorage.getItem(PREFS_KEY);if(r)return JSON.parse(r)}catch(e){}return null}
+        function saveAllToStorage(d){localStorage.setItem(PREFS_KEY,JSON.stringify(d))}
+        function persistCurrentTable(){var a=loadAllFromStorage()||{};a.tableNumbers=tableNumbers;a.currentTableNumber=currentTableNumber;a.activeRowIndex=activeRowIndex;var p='t_'+currentTableNumber+'_';for(var i=0;i<ROW_COUNT;i++){a[p+'coeff_'+i]=rowsData[i].coeff;a[p+'x_'+i]=rowsData[i].xValue}a[p+'duty']=getDouble($dutyCycle.value,DEFAULT_Y);a[p+'rowOffset']=rowOffset;saveAllToStorage(a)}
+        function loadTableIntoRowsData(tn){var a=loadAllFromStorage(),p='t_'+tn+'_';for(var i=0;i<ROW_COUNT;i++){rowsData[i]={coeff:DEFAULT_COEFF,xValue:DEFAULT_X,resultX:0,resultY:0};if(a){if(a[p+'coeff_'+i]!==undefined)rowsData[i].coeff=a[p+'coeff_'+i];if(a[p+'x_'+i]!==undefined)rowsData[i].xValue=a[p+'x_'+i]}}var dv=DEFAULT_Y;if(a&&a[p+'duty']!==undefined)dv=a[p+'duty'];isInternalUpdate=true;$dutyCycle.value=df1(dv);dutyPreset=Math.round(dv);isInternalUpdate=false;var ro=0;if(a){if(a[p+'rowOffset']!==undefined)ro=a[p+'rowOffset'];else if(a.rowOffset!==undefined)ro=a.rowOffset}rowOffset=ro}
+        function switchToTable(tn){persistCurrentTable();var a=loadAllFromStorage();if(a)tableNumbers=a.tableNumbers||['1'];currentTableNumber=tn;loadTableIntoRowsData(tn);$tableTitle.textContent=buildTableTitle(tn);updatePowerLabel();updateCoeffInputs();refreshRowNumbers();updateAllRowsCalculation();updateMainCalculation();selectRow(0);persistCurrentTable()}
+        function refreshTableListFromStorage(){var a=loadAllFromStorage();if(a&&a.tableNumbers)tableNumbers=a.tableNumbers}
+
+        /* ================= РАСЧЁТЫ ================= */
+        function updateRowCalculation(i){var y=getDouble($dutyCycle.value,DEFAULT_Y);rowsData[i].resultX=rowsData[i].coeff*rowsData[i].xValue;rowsData[i].resultY=rowsData[i].resultX*y;var r=document.getElementById('row-'+i);if(r){r.querySelector('.cell-result-x').textContent=df(rowsData[i].resultX);r.querySelector('.cell-result-y').textContent=df(rowsData[i].resultY)}}
+        function updateAllRowsCalculation(){for(var i=0;i<ROW_COUNT;i++)updateRowCalculation(i)}
+        // Верхнее поле: УВ → Р импульс (resultY), КИУ → Р средняя (resultX)
+        function updateMainCalculation(){if(activeRowIndex>=0&&activeRowIndex<ROW_COUNT){$resultTextView.textContent=df(isUvMode()?rowsData[activeRowIndex].resultY:rowsData[activeRowIndex].resultX);$textNaTablo.textContent=df(rowsData[activeRowIndex].xValue)}}
+
+        /* ================= ТАБЛИЦА ================= */
+        function refreshRowNumbers(){var h=document.getElementById('thNumberHeader');if(h)h.textContent='№ Л ('+(rowOffset===0?'1':'2')+')';for(var i=0;i<ROW_COUNT;i++){var c=document.getElementById('cell-num-'+i);if(c)c.textContent=i+1+rowOffset}}
+        function createTable(){$tableBody.innerHTML='';for(var i=0;i<ROW_COUNT;i++){(function(idx){var tr=document.createElement('tr');tr.id='row-'+idx;tr.onclick=function(){selectRow(idx)};tr.innerHTML='<td class="cell-num" id="cell-num-'+idx+'">'+(idx+1+rowOffset)+'</td><td><input type="text" class="coeff-input" id="coeff-'+idx+'" value="'+df3(rowsData[idx].coeff)+'" inputmode="decimal"></td><td class="cell-result cell-result-x">'+df(rowsData[idx].resultX)+'</td><td class="cell-result cell-result-y">'+df(rowsData[idx].resultY)+'</td>';$tableBody.appendChild(tr);var inp=tr.querySelector('.coeff-input');inp.addEventListener('focus',function(){selectRow(idx)});inp.addEventListener('input',function(){if(isInternalUpdate)return;if(activeRowIndex!==idx)selectRow(idx);var cv=getDouble(inp.value,DEFAULT_COEFF);if(cv<0){cv=0;showToast('Коэффициент не может быть отрицательным')}if(cv>9999){cv=9999;showToast('Коэффициент слишком велик')}rowsData[idx].coeff=cv;updateRowCalculation(idx);if(idx===activeRowIndex)updateMainCalculation();persistCurrentTable()})})(i)}}
+        function updateCoeffInputs(){isInternalUpdate=true;for(var i=0;i<ROW_COUNT;i++){var inp=document.getElementById('coeff-'+i);if(inp)inp.value=df3(rowsData[i].coeff)}isInternalUpdate=false}
+        function selectRow(i){if(i<0||i>=ROW_COUNT)return;activeRowIndex=i;for(var j=0;j<ROW_COUNT;j++){var tr=document.getElementById('row-'+j);if(tr){if(j===activeRowIndex)tr.classList.add('active');else tr.classList.remove('active')}}$textNaTablo.textContent=df(rowsData[i].xValue);updateMainCalculation();persistCurrentTable()}
+
+        /* ================= СОБЫТИЯ ================= */
+        document.getElementById('add_down').addEventListener('click',function(){var v=rowsData[activeRowIndex].xValue-K_STEP;if(v<0)v=0;rowsData[activeRowIndex].xValue=roundTo1(v);updateRowCalculation(activeRowIndex);updateMainCalculation();persistCurrentTable()});
+        document.getElementById('add_up').addEventListener('click',function(){var v=rowsData[activeRowIndex].xValue+K_STEP;if(v>999.9){v=999.9;showToast('Показание прибора слишком велико')}rowsData[activeRowIndex].xValue=roundTo1(v);updateRowCalculation(activeRowIndex);updateMainCalculation();persistCurrentTable()});
+        $dutyCycle.addEventListener('input',function(){if(isInternalUpdate)return;var v=getDouble($dutyCycle.value,DEFAULT_Y);if(v<0){isInternalUpdate=true;$dutyCycle.value='0';isInternalUpdate=false;showToast('Q не может быть меньше нуля')}if(v>9999){isInternalUpdate=true;$dutyCycle.value='9999';isInternalUpdate=false;v=9999;showToast('Q слишком велико')}dutyPreset=Math.round(v);updateAllRowsCalculation();updateMainCalculation();updatePowerLabel();$tableTitle.textContent=buildTableTitle(currentTableNumber);persistCurrentTable()});
+        $tableTitle.addEventListener('click',showTableManager);
+
+        /* ================= МЕНЕДЖЕР ТАБЛИЦ ================= */
+        function showTableManager(){persistCurrentTable();refreshTableListFromStorage();var h='<h3>📋 Таблицы</h3>';h+='<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;"><button class="btn-add-table" id="btnAddNew" style="flex:1;min-width:80px;margin-bottom:0;background:#4CAF50;">+ Добавить</button><button class="btn-add-table" id="btnExportAll" style="flex:1;min-width:80px;margin-bottom:0;background:#1565C0;">📤 Экспорт</button><button class="btn-add-table" id="btnImportAll" style="flex:1;min-width:80px;margin-bottom:0;background:#E65100;">📥 Импорт</button></div>';
+        for(var t=0;t<tableNumbers.length;t++){var tn=tableNumbers[t],isC=(tn===currentTableNumber),duty=getStoredDuty(tn);h+='<div class="table-list-item" data-table-number="'+tn+'" style="'+(isC?'border:2px solid #4CAF50;':'')+'"><span class="name">'+titleForDuty(tn,duty)+(isC?' ✓':'')+'</span><div class="actions"><button class="btn-mini btn-edit" data-action="edit">Изм.</button><button class="btn-mini btn-del" data-action="delete"'+(tableNumbers.length<=1?' disabled':'')+'>Удал.</button></div></div>'}
+        h+='<div class="btn-row-modal" style="margin-top:12px"><button class="btn-modal btn-cancel" id="btnClose">Закрыть</button></div>';$modalContent.innerHTML=h;$modalOverlay.classList.add('show');
+        document.getElementById('btnClose').onclick=closeModal;document.getElementById('btnAddNew').onclick=showAddTableDialog;document.getElementById('btnExportAll').onclick=exportAllTables;document.getElementById('btnImportAll').onclick=importAllTables;
+        var items=$modalContent.querySelectorAll('.table-list-item');for(var it=0;it<items.length;it++){(function(item){var tn=item.getAttribute('data-table-number');var ne=item.querySelector('.name');if(ne)ne.onclick=function(){closeModal();switchToTable(tn)};var eb=item.querySelector('[data-action="edit"]');if(eb)eb.onclick=function(){closeModal();showRenameDialog(tn)};var db=item.querySelector('[data-action="delete"]');if(db)db.onclick=function(){closeModal();showDeleteConfirm(tn)}})(items[it])}}
+        function showAddTableDialog(){$modalContent.innerHTML='<h3>➕ Добавить новый</h3><input type="text" id="newTableInput" placeholder="Введите номер" inputmode="text"><div class="btn-row-modal"><button class="btn-modal btn-cancel" id="btnCancelAdd">Отмена</button><button class="btn-modal btn-ok" id="btnOkAdd">OK</button></div>';$modalOverlay.classList.add('show');document.getElementById('btnCancelAdd').onclick=closeModal;document.getElementById('btnOkAdd').onclick=function(){var nn=document.getElementById('newTableInput').value.trim();if(!nn){showToast('Номер таблицы пустой');return}if(tableNumbers.indexOf(nn)>=0){showToast('Такой номер уже существует');return}persistCurrentTable();tableNumbers.push(nn);var _a=loadAllFromStorage()||{};var _p='t_'+nn+'_';for(var _i=0;_i<ROW_COUNT;_i++){_a[_p+'coeff_'+_i]=defaultCoeffForMode();_a[_p+'x_'+_i]=defaultXForMode()}_a[_p+'duty']=dutyPreset;_a[_p+'rowOffset']=0;_a.tableNumbers=tableNumbers;saveAllToStorage(_a);switchToTable(nn);closeModal()};setTimeout(function(){var inp=document.getElementById('newTableInput');if(inp)inp.focus()},100)}
+        function showRenameDialog(on){$modalContent.innerHTML='<h3>✏️ Изменить номер</h3><input type="text" id="renameInput" value="'+escapeHtml(on)+'" inputmode="text"><div class="btn-row-modal"><button class="btn-modal btn-cancel" id="btnCancelRename">Отмена</button><button class="btn-modal btn-ok" id="btnOkRename">OK</button></div>';$modalOverlay.classList.add('show');document.getElementById('btnCancelRename').onclick=closeModal;document.getElementById('btnOkRename').onclick=function(){var nn=document.getElementById('renameInput').value.trim();if(!nn){showToast('Номер пустой');return}if(nn===on){closeModal();return}if(tableNumbers.indexOf(nn)>=0){showToast('Такой номер уже существует');return}var idx=tableNumbers.indexOf(on);if(idx>=0)tableNumbers[idx]=nn;var a=loadAllFromStorage()||{},op='t_'+on+'_',np='t_'+nn+'_';for(var i=0;i<ROW_COUNT;i++){a[np+'coeff_'+i]=(a[op+'coeff_'+i]!==undefined)?a[op+'coeff_'+i]:DEFAULT_COEFF;delete a[op+'coeff_'+i];a[np+'x_'+i]=(a[op+'x_'+i]!==undefined)?a[op+'x_'+i]:DEFAULT_X;delete a[op+'x_'+i]}a[np+'duty']=(a[op+'duty']!==undefined)?a[op+'duty']:DEFAULT_Y;delete a[op+'duty'];a[np+'rowOffset']=(a[op+'rowOffset']!==undefined)?a[op+'rowOffset']:0;delete a[op+'rowOffset'];a.tableNumbers=tableNumbers;if(on===currentTableNumber){currentTableNumber=nn;$tableTitle.textContent=buildTableTitle(nn)}saveAllToStorage(a);closeModal();showToast('Номер изменён')};setTimeout(function(){var inp=document.getElementById('renameInput');if(inp){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length)}},100)}
+        function showDeleteConfirm(tn){if(tableNumbers.length<=1){showToast('Нельзя удалить последнюю таблицу');return}$modalContent.innerHTML='<h3>⚠️ Удаление</h3><p style="margin-bottom:16px;">Удалить '+titleForDuty(tn,getStoredDuty(tn))+'?</p><div class="btn-row-modal"><button class="btn-modal btn-cancel" id="btnCancelDel">Нет</button><button class="btn-modal btn-danger" id="btnOkDel">Да</button></div>';$modalOverlay.classList.add('show');document.getElementById('btnCancelDel').onclick=closeModal;document.getElementById('btnOkDel').onclick=function(){var idx=tableNumbers.indexOf(tn);if(idx>=0)tableNumbers.splice(idx,1);var a=loadAllFromStorage()||{},dp='t_'+tn+'_';for(var i=0;i<ROW_COUNT;i++){delete a[dp+'coeff_'+i];delete a[dp+'x_'+i]}delete a[dp+'duty'];delete a[dp+'rowOffset'];a.tableNumbers=tableNumbers;saveAllToStorage(a);if(tn===currentTableNumber){currentTableNumber=tableNumbers[0];loadTableIntoRowsData(currentTableNumber);$tableTitle.textContent=buildTableTitle(currentTableNumber);updatePowerLabel();updateCoeffInputs();refreshRowNumbers();updateAllRowsCalculation();updateMainCalculation();selectRow(0);persistCurrentTable()}closeModal();showToast('Таблица удалена')}}
+
+        /* ================= ЭКСПОРТ / ИМПОРТ ================= */
+        function exportAllTables(){persistCurrentTable();var a=loadAllFromStorage(),ed={app:'PowerM3-108',version:1,exportedAt:new Date().toISOString(),tables:{}};for(var t=0;t<tableNumbers.length;t++){var tn=tableNumbers[t],tp='t_'+tn+'_',ti={duty:a[tp+'duty']||DEFAULT_Y,rowOffset:(a[tp+'rowOffset']!==undefined)?a[tp+'rowOffset']:0,rows:[]};for(var i=0;i<ROW_COUNT;i++)ti.rows.push({coeff:(a[tp+'coeff_'+i]!==undefined)?a[tp+'coeff_'+i]:DEFAULT_COEFF,xValue:(a[tp+'x_'+i]!==undefined)?a[tp+'x_'+i]:DEFAULT_X});ed.tables[tn]=ti}var js=JSON.stringify(ed,null,2),blob=new Blob([js],{type:'application/json;charset=UTF-8'}),url=URL.createObjectURL(blob),dl=document.createElement('a');dl.href=url;dl.download='PowerM3_backup_'+getDateString()+'.json';document.body.appendChild(dl);dl.click();document.body.removeChild(dl);URL.revokeObjectURL(url);showToast('Экспортировано таблиц: '+tableNumbers.length,3000)}
+        function importAllTables(){var fi=document.createElement('input');fi.type='file';fi.accept='.json';fi.style.display='none';document.body.appendChild(fi);fi.onchange=function(){var f=fi.files[0];if(!f){document.body.removeChild(fi);return}var r=new FileReader();r.onload=function(e){try{var id=JSON.parse(e.target.result);if(!id.tables||id.app!=='PowerM3-108'){showToast('Ошибка: неверный формат файла');document.body.removeChild(fi);return}var ic=0,a=loadAllFromStorage()||{};for(var tn in id.tables){if(!id.tables.hasOwnProperty(tn))continue;var ttn=tn,c=1;while(tableNumbers.indexOf(ttn)>=0){ttn=tn+'_'+c;c++}var ti=id.tables[tn],tp='t_'+ttn+'_';for(var i=0;i<ROW_COUNT;i++){a[tp+'coeff_'+i]=(ti.rows&&ti.rows[i])?ti.rows[i].coeff:DEFAULT_COEFF;a[tp+'x_'+i]=(ti.rows&&ti.rows[i])?ti.rows[i].xValue:DEFAULT_X}a[tp+'duty']=ti.duty||DEFAULT_Y;a[tp+'rowOffset']=(ti.rowOffset!==undefined)?ti.rowOffset:0;tableNumbers.push(ttn);ic++}a.tableNumbers=tableNumbers;saveAllToStorage(a);showToast('Импортировано таблиц: '+ic,3000);closeModal();setTimeout(function(){persistCurrentTable();refreshTableListFromStorage();showTableManager()},300)}catch(err){showToast('Ошибка чтения файла: '+err.message)}document.body.removeChild(fi)};r.readAsText(f)};fi.click()}
+        function closeModal(){$modalOverlay.classList.remove('show')}$modalOverlay.addEventListener('click',function(e){if(e.target===$modalOverlay)closeModal()});
+
+        /* ================= СОХРАНИТЬ И ОТПРАВИТЬ ================= */
+        document.getElementById('btnSaveSend').addEventListener('click',function(){persistCurrentTable();var ht=generateHtmlTable();if(navigator.share&&navigator.canShare){var blob=new Blob([ht],{type:'text/html'});var file=new File([blob],'Power_'+currentTableNumber+'_'+getDateString()+'.html',{type:'text/html'});var sd={title:buildTableTitle(currentTableNumber),text:'Файл таблицы: '+buildTableTitle(currentTableNumber)};if(navigator.canShare({files:[file]}))sd.files=[file];navigator.share(sd).then(function(){showToast('Файл отправлен')}).catch(function(err){if(err.name!=='AbortError')downloadFile(ht)})}else{downloadFile(ht)}});
+        // Подсветка столбца при экспорте: УВ → "Р импульс", КИУ → "Р средняя"
+        function generateHtmlTable(){var n=new Date(),dt=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')+' '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');var hlX=isUvMode()?'':'background:#d9ead3;';var hlY=isUvMode()?'background:#d9ead3;':'';var h='<html><head><meta charset="UTF-8"></head><body>';h+='<table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;text-align:center;font-family:Arial;">';h+='<tr><td colspan="5" style="font-size:16pt;font-weight:bold;background:#d9ead3;text-align:center;">'+escapeHtml(buildTableTitle(currentTableNumber))+'</td></tr>';h+='<tr><td style="font-weight:bold;">Дата и время</td><td colspan="4">'+escapeHtml(dt)+'</td></tr>';h+='<tr><td style="font-weight:bold;">Скважность Q</td><td colspan="4">'+escapeHtml($dutyCycle.value.trim())+'</td></tr>';h+='<tr><td colspan="5" style="background:#ffffff;height:12px;"></td></tr>';h+='<tr style="font-weight:bold;background:#b6d7a8;text-align:center;"><td>№ Л</td><td>Коэфф.</td><td>М3-108</td><td>Р среднее</td><td>Р импульс</td></tr>';for(var i=0;i<ROW_COUNT;i++){h+='<tr><td style="text-align:center;">'+(i+1+rowOffset)+'</td><td style="text-align:center;">'+df3(rowsData[i].coeff).replace('.',',')+'</td><td style="text-align:center;">'+df1(rowsData[i].xValue).replace('.',',')+'</td><td style="text-align:center;'+hlX+'">'+df(rowsData[i].resultX).replace('.',',')+'</td><td style="text-align:center;'+hlY+'">'+df(rowsData[i].resultY).replace('.',',')+'</td></tr>'}h+='</table></body></html>';return h}
+        function downloadFile(hc){var blob=new Blob([hc],{type:'text/html;charset=UTF-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Power_'+currentTableNumber+'_'+getDateString()+'.html';document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);showToast('Файл сохранён: '+a.download)}
+
+        /* ================= ОЧИСТКА ================= */
+        document.getElementById('btnClearTable').addEventListener('click',function(){if(confirm('Сбросить все значения ТЕКУЩЕЙ таблицы («'+buildTableTitle(currentTableNumber)+'») к значениям по умолчанию?\n\nОстальные таблицы не будут затронуты.')){isInternalUpdate=true;$dutyCycle.value=df1(DEFAULT_Y);dutyPreset=DEFAULT_Y;for(var i=0;i<ROW_COUNT;i++){rowsData[i].coeff=DEFAULT_COEFF;rowsData[i].xValue=DEFAULT_X}activeRowIndex=0;rowOffset=0;isInternalUpdate=false;updateCoeffInputs();updateAllRowsCalculation();updateMainCalculation();updatePowerLabel();refreshRowNumbers();$tableTitle.textContent=buildTableTitle(currentTableNumber);selectRow(0);persistCurrentTable();showToast('Таблица «'+buildTableTitle(currentTableNumber)+'» очищена')}});
+
+        /* ============================================================
+           ОБУЧАЮЩИЙ ТУР ("Помощь")
+           ============================================================
+           При показе каждого шага:
+             1) скроллим экран так, чтобы элемент был виден (scrollIntoView)
+             2) подсвечиваем элемент рамкой + затемняем остальное
+             3) показываем подсказку с кнопками Назад/Далее
+           Также слушаем scroll/resize и пересчитываем позиции,
+           чтобы подсветка и подсказка всегда оставались на экране. */
+        var tourSteps = [
+            { target: '#resultTextView', title: 'Результат', text: 'Здесь отображается мощность для выбранной литеры (строка в таблице). Режим КИУ (Q=16) — средняя мощность P ср, режим УВ (Q=10) — импульсная мощность P имп. Формула: Коэфф × показания прибора.' },
+            { target: '.meter-section', title: 'Дисплей М3-108', text: 'Стилизованное «табло» прибора. Показывает текущее значение для выбранной литеры (строка в таблице).' },
+            { target: '#duty_cycle', title: 'Скважность Q', text: 'Поле ввода скважности. Нажмите на букву «Q» слева, чтобы создать НОВУЮ таблицу в другом режиме: КИУ (Q=16) ↔ УВ (Q=10). Текущая таблица не изменяется и сохраняется, а новая получает номер вида «текущий_1», «текущий_2» и т.д.' },
+            { target: '#add_up', title: 'Кнопки ±0.1', text: 'Кнопки «−» и «+» изменяют показания прибора для выбранной литеры (строка в таблице) с шагом 0.1.' },
+            { target: '#tableTitle', title: 'Заголовок таблицы', text: 'Показывает текущую таблицу «КИУ № ...» или «УВ № ...». Нажмите на заголовок, чтобы открыть список таблиц: создать, выбрать, переименовать или удалить. Можно экспортировать все таблицы в один файл .JSON или импортировать из .JSON все таблицы в приложение.' },
+            { target: '.table-wrapper', title: 'Таблица расчётов', text: 'Вводите коэффициенты в колонке «Коэфф.». Результаты «Р средняя» и «Р импульс» считаются автоматически. Для каждой литеры нужно изменять показания прибора - для этого нужно нажать на нужную строку с номером литеры и кнопками больше меньше изменить показания прибора. Для переключения нумерации литер 1–6 ↔ 7–12 нажмите на заголовок «№ Л»' },
+            { target: '#btnSaveSend', title: 'Сохранить и отправить', text: 'Экспортирует текущую таблицу в HTML-файл и открывает системное окно отправки (почта, мессенджеры).' },
+            { target: '#btnClearTable', title: 'Очистить', text: 'Сбрасывает ТОЛЬКО текущую таблицу к значениям по умолчанию. Остальные таблицы сохраняются.' }
+        ];
+
+        var tourCurrent = 0;          // текущий шаг
+        var tourHighlightEl = null;   // элемент-подсветка
+        var tourTooltipEl = null;     // элемент-подсказка
+
+        // Рассчитать и применить позиции подсветки и подсказки (не трогает текст)
+        function positionTourStep(index) {
+            if (!tourHighlightEl || !tourTooltipEl) return false;
+            var target = document.querySelector(tourSteps[index].target);
+            if (!target) return false;
+
+            var rect = target.getBoundingClientRect();
+
+            // подсветка — точно по границам элемента
+            tourHighlightEl.style.left   = rect.left + 'px';
+            tourHighlightEl.style.top    = rect.top + 'px';
+            tourHighlightEl.style.width  = rect.width + 'px';
+            tourHighlightEl.style.height = rect.height + 'px';
+
+            // подсказка: прижимаем к экрану (clamp), чтобы кнопки были видны
+            var tipW = 320;
+            var tipH = 170;
+            var left = rect.left + rect.width / 2 - tipW / 2;
+            if (left < 10) left = 10;
+            if (left + tipW > window.innerWidth - 10) left = window.innerWidth - tipW - 10;
+
+            var top = rect.bottom + 12;
+            if (top + tipH > window.innerHeight) {
+                top = rect.top - tipH - 12;   // ставим над элементом
+                if (top < 10) top = 10;
+            }
+
+            tourTooltipEl.style.left = left + 'px';
+            tourTooltipEl.style.top  = top + 'px';
+            return true;
+        }
+
+        // Показать шаг тура
+        function showTourStep(index) {
+            var target = document.querySelector(tourSteps[index].target);
+            if (!target) { tourNext(); return; }
+
+            // заполняем текст подсказки
+            tourTooltipEl.innerHTML =
+                '<div class="tour-title">' + tourSteps[index].title + '</div>' +
+                '<div class="tour-text">'  + tourSteps[index].text  + '</div>' +
+                '<div class="tour-nav">' +
+                    '<button class="tour-prev" id="tourPrev">' + (index === 0 ? 'Отмена' : '← Назад') + '</button>' +
+                    '<span class="tour-step">' + (index + 1) + ' / ' + tourSteps.length + '</span>' +
+                    '<button class="tour-next" id="tourNext">' + (index === tourSteps.length - 1 ? 'Готово' : 'Далее →') + '</button>' +
+                '</div>';
+
+            // обработчики кнопок
+            document.getElementById('tourPrev').onclick = function() {
+                if (index === 0) endTour();
+                else { tourCurrent--; showTourStep(tourCurrent); }
+            };
+            document.getElementById('tourNext').onclick = function() {
+                if (index === tourSteps.length - 1) endTour();
+                else { tourCurrent++; showTourStep(tourCurrent); }
+            };
+
+            // ВАЖНО: прокручиваем к элементу, чтобы он попал в зону видимости
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // сразу позиционируем + страховочная коррекция после завершения скролла
+            positionTourStep(index);
+            setTimeout(function() { positionTourStep(index); }, 400);
+        }
+
+        // Следующий шаг (для пропуска отсутствующих элементов)
+        function tourNext() {
+            tourCurrent++;
+            if (tourCurrent >= tourSteps.length) endTour();
+            else showTourStep(tourCurrent);
+        }
+
+        // Завершить тур
+        function endTour() {
+            if (tourHighlightEl) { tourHighlightEl.remove(); tourHighlightEl = null; }
+            if (tourTooltipEl)    { tourTooltipEl.remove();    tourTooltipEl = null; }
+        }
+
+        // Запустить тур
+        function startTour() {
+            if (!tourHighlightEl) {
+                tourHighlightEl = document.createElement('div');
+                tourHighlightEl.className = 'tour-highlight';
+                document.body.appendChild(tourHighlightEl);
+            }
+            if (!tourTooltipEl) {
+                tourTooltipEl = document.createElement('div');
+                tourTooltipEl.className = 'tour-tooltip';
+                document.body.appendChild(tourTooltipEl);
+            }
+            tourCurrent = 0;
+            showTourStep(0);
+        }
+
+        // При прокрутке или изменении размера окна — обновляем позиции,
+        // чтобы подсветка и подсказка не "уезжали" за экран.
+        window.addEventListener('scroll', function() {
+            if (tourHighlightEl && tourTooltipEl && tourCurrent >= 0 && tourCurrent < tourSteps.length) {
+                positionTourStep(tourCurrent);
+            }
+        });
+        window.addEventListener('resize', function() {
+            if (tourHighlightEl && tourTooltipEl && tourCurrent >= 0 && tourCurrent < tourSteps.length) {
+                positionTourStep(tourCurrent);
+            }
+        });
+
+        /* ================= ИНИЦИАЛИЗАЦИЯ ================= */
+        function init(){
+            for(var i=0;i<ROW_COUNT;i++)rowsData.push({coeff:DEFAULT_COEFF,xValue:DEFAULT_X,resultX:0,resultY:0});
+            var s=loadAllFromStorage();if(s){tableNumbers=s.tableNumbers||['1'];currentTableNumber=s.currentTableNumber||'1';activeRowIndex=s.activeRowIndex||0}
+            loadTableIntoRowsData(currentTableNumber);$tableTitle.textContent=buildTableTitle(currentTableNumber);updatePowerLabel();createTable();refreshRowNumbers();updateAllRowsCalculation();selectRow(activeRowIndex);updateMainCalculation();persistCurrentTable();
+            var th=document.getElementById('thNumberHeader');if(th)th.addEventListener('click',function(){rowOffset=(rowOffset===0)?6:0;refreshRowNumbers();persistCurrentTable()});
+            // Переключатель Q: смена режима КИУ ↔ УВ
+            var ql=document.getElementById('qLabel');if(ql)ql.addEventListener('click',function(){
+                var nextDuty=(dutyPreset===UV_Y)?DEFAULT_Y:UV_Y, nextIsUv=(nextDuty===UV_Y);
+                // Текущая таблица сохраняется как есть. Создаём НОВУЮ таблицу для другого режима.
+                var base=currentTableNumber, suf=1, nn=base+'_'+suf;
+                while(tableNumbers.indexOf(nn)>=0){suf++;nn=base+'_'+suf}
+                var a=loadAllFromStorage()||{}, p='t_'+nn+'_';
+                for(var i=0;i<ROW_COUNT;i++){a[p+'coeff_'+i]=nextIsUv?UV_COEFF:DEFAULT_COEFF;a[p+'x_'+i]=nextIsUv?UV_X:DEFAULT_X}
+                a[p+'duty']=nextDuty;
+                a[p+'rowOffset']=0;
+                tableNumbers.push(nn);a.tableNumbers=tableNumbers;saveAllToStorage(a);
+                switchToTable(nn);
+                showToast('Создана новая таблица «'+buildTableTitle(nn)+'»',3000);
+            });
+            var hb=document.getElementById('btnHelp');if(hb)hb.addEventListener('click',startTour);
+            if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
+        }
+        init();
+    </script>
+</body>
+</html>
